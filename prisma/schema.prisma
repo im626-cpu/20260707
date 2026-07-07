@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id // Supabase auth user UUID와 동일한 값 사용
+  nickname    String
+  schoolEmail String   @unique
+  createdAt   DateTime @default(now())
+
+  meetups        Meetup[]
+  participations Participation[]
+  chatMessages   ChatMessage[]
+}
+
+model Meetup {
+  id               String       @id @default(cuid())
+  hostId           String
+  host             User         @relation(fields: [hostId], references: [id])
+  locationBuilding String
+  locationDetail   String
+  mealTimeStart    DateTime
+  mealTimeEnd      DateTime
+  storeName        String
+  menuDescription  String
+  deliveryFee      Int
+  minOrderAmount   Int
+  status           MeetupStatus @default(RECRUITING)
+  createdAt        DateTime     @default(now())
+
+  participations Participation[]
+  chatMessages   ChatMessage[]
+
+  @@index([status])
+  @@index([hostId])
+}
+
+enum MeetupStatus {
+  RECRUITING
+  MATCHED
+  EXPIRED
+  CANCELLED
+}
+
+model Participation {
+  id             String              @id @default(cuid())
+  meetupId       String
+  meetup         Meetup              @relation(fields: [meetupId], references: [id])
+  userId         String
+  user           User                @relation(fields: [userId], references: [id])
+  expectedAmount Int
+  status         ParticipationStatus @default(PENDING)
+  createdAt      DateTime            @default(now())
+
+  @@unique([meetupId, userId])
+  @@index([meetupId, status])
+}
+
+enum ParticipationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REMOVED
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  meetupId  String
+  meetup    Meetup   @relation(fields: [meetupId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([meetupId, createdAt])
+}
