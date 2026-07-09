@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { asc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { meetups } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getApprovedSum, getEffectiveStatus } from "@/lib/meetup";
 import { formatTimeRange, formatWon } from "@/lib/format";
@@ -22,11 +24,11 @@ export default async function MeetupDetailPage({
 }) {
   const { id } = await params;
 
-  const meetup = await prisma.meetup.findUnique({
-    where: { id },
-    include: {
+  const meetup = await db.query.meetups.findFirst({
+    where: eq(meetups.id, id),
+    with: {
       host: true,
-      participations: { include: { user: true }, orderBy: { createdAt: "asc" } },
+      participations: { with: { user: true }, orderBy: (p) => asc(p.createdAt) },
     },
   });
 

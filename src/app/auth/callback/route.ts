@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
 import { isAllowedSchoolEmail, sanitizeRedirectPath } from "@/lib/auth";
 import { generateRandomNickname } from "@/lib/nickname";
 import { createClient } from "@/lib/supabase/server";
@@ -29,15 +30,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=domain", origin));
   }
 
-  await prisma.user.upsert({
-    where: { id: authUser.id },
-    update: {},
-    create: {
+  await db
+    .insert(users)
+    .values({
       id: authUser.id,
       schoolEmail: authUser.email,
       nickname: generateRandomNickname(),
-    },
-  });
+    })
+    .onConflictDoNothing({ target: users.id });
 
   return NextResponse.redirect(new URL(redirectTo, origin));
 }

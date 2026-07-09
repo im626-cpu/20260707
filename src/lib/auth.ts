@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { users } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 function allowedDomains(): string[] {
@@ -25,7 +27,7 @@ export function sanitizeRedirectPath(path: string | null | undefined): string {
   return path;
 }
 
-/** 로그인된 경우 Supabase 세션 + Prisma User row를 함께 반환. 비로그인 시 null. */
+/** 로그인된 경우 Supabase 세션 + User row를 함께 반환. 비로그인 시 null. */
 export async function getCurrentUser() {
   const supabase = await createClient();
   const {
@@ -34,6 +36,6 @@ export async function getCurrentUser() {
 
   if (!authUser) return null;
 
-  const user = await prisma.user.findUnique({ where: { id: authUser.id } });
-  return user;
+  const user = await db.query.users.findFirst({ where: eq(users.id, authUser.id) });
+  return user ?? null;
 }

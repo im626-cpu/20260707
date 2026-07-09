@@ -1,19 +1,22 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { chatMessages, meetups, participations } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { MatchingError } from "@/lib/matching";
 
 async function assertChatAccess(meetupId: string, userId: string) {
-  const meetup = await prisma.meetup.findUniqueOrThrow({ where: { id: meetupId } });
+  const meetup = await db.query.meetups.findFirst({ where: eq(meetups.id, meetupId) });
+  if (!meetup) throw new Error(`Meetup not found: ${meetupId}`);
 
   if (meetup.status !== "MATCHED") {
     throw new MatchingError("매칭 완료된 모임만 채팅할 수 있습니다.");
   }
   if (meetup.hostId === userId) return;
 
-  const participation = await prisma.participation.findUnique({
-    where: { meetupId_userId: { meetupId, userId } },
+  const participation = await db.query.participations.findFirst({
+    where: and(eq(participations.meetupId, meetupId), eq(participations.userId, userId)),
   });
 
   if (participation?.status !== "APPROVED") {
@@ -32,7 +35,5 @@ export async function sendMessageAction(meetupId: string, content: string) {
 
   await assertChatAccess(meetupId, user.id);
 
-  await prisma.chatMessage.create({
-    data: { meetupId, userId: user.id, content: trimmed },
-  });
+  await db.insert(chatMessages).values({ meetupId, userId: user.id, content: trimmed });
 }

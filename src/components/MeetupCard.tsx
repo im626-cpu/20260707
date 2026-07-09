@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Meetup, Participation, User } from "@/generated/prisma/client";
+import type { Meetup, Participation, User } from "@/db/schema";
 import { getEffectiveStatus } from "@/lib/meetup";
 import { formatTimeRange, formatWon } from "@/lib/format";
 import ProgressBar from "./ProgressBar";

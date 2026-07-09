@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { asc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { chatMessages, meetups, participations } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import ChatWindow from "./ChatWindow";
 
@@ -10,11 +12,14 @@ export default async function ChatPage({
 }) {
   const { id } = await params;
 
-  const meetup = await prisma.meetup.findUnique({
-    where: { id },
-    include: {
+  const meetup = await db.query.meetups.findFirst({
+    where: eq(meetups.id, id),
+    with: {
       host: true,
-      participations: { where: { status: "APPROVED" }, include: { user: true } },
+      participations: {
+        where: eq(participations.status, "APPROVED"),
+        with: { user: true },
+      },
     },
   });
 
@@ -30,9 +35,9 @@ export default async function ChatPage({
     notFound();
   }
 
-  const messages = await prisma.chatMessage.findMany({
-    where: { meetupId: id },
-    orderBy: { createdAt: "asc" },
+  const messages = await db.query.chatMessages.findMany({
+    where: eq(chatMessages.meetupId, id),
+    orderBy: asc(chatMessages.createdAt),
   });
 
   const participants = [

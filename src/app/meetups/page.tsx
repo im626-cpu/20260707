@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { meetups } from "@/db/schema";
 import { BUILDINGS } from "@/lib/buildings";
 import { getApprovedSum, getEffectiveStatus } from "@/lib/meetup";
 import MeetupCard from "@/components/MeetupCard";
@@ -15,16 +17,16 @@ export default async function MeetupsPage({
   const buildingFilter = params.building ?? "";
   const statusFilter = params.status ?? "recruiting";
 
-  const meetups = await prisma.meetup.findMany({
-    where: {
-      status: { in: ["RECRUITING", "MATCHED"] },
-      ...(buildingFilter ? { locationBuilding: buildingFilter } : {}),
-    },
-    include: { participations: true, host: true },
-    orderBy: { mealTimeStart: "asc" },
+  const meetupList = await db.query.meetups.findMany({
+    where: and(
+      inArray(meetups.status, ["RECRUITING", "MATCHED"]),
+      buildingFilter ? eq(meetups.locationBuilding, buildingFilter) : undefined,
+    ),
+    with: { participations: true, host: true },
+    orderBy: asc(meetups.mealTimeStart),
   });
 
-  const visible = meetups.filter((m) => {
+  const visible = meetupList.filter((m) => {
     const effective = getEffectiveStatus(m);
     if (statusFilter === "all") return true;
     if (statusFilter === "recruiting") return effective === "RECRUITING";

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { meetups, participations } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getApprovedSum, getEffectiveStatus } from "@/lib/meetup";
 import { formatTimeRange, formatWon } from "@/lib/format";
@@ -11,16 +13,18 @@ export default async function MyPage() {
   if (!user) redirect("/login?redirectTo=/my");
 
   const [hostedMeetups, myParticipations] = await Promise.all([
-    prisma.meetup.findMany({
-      where: { hostId: user.id },
-      include: { participations: true },
-      orderBy: { createdAt: "desc" },
+    db.query.meetups.findMany({
+      where: eq(meetups.hostId, user.id),
+      with: { participations: true },
+      orderBy: desc(meetups.createdAt),
     }),
-    prisma.participation.findMany({
-      where: { userId: user.id, meetup: { hostId: { not: user.id } } },
-      include: { meetup: { include: { participations: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
+    db.query.participations
+      .findMany({
+        where: eq(participations.userId, user.id),
+        with: { meetup: { with: { participations: true } } },
+        orderBy: desc(participations.createdAt),
+      })
+      .then((rows) => rows.filter((p) => p.meetup.hostId !== user.id)),
   ]);
 
   return (
