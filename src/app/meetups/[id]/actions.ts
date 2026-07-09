@@ -29,6 +29,16 @@ function handle(e: unknown): ActionState {
   throw e;
 }
 
+/**
+ * 반환값을 쓰지 않는 순수 form action(useActionState 미사용)용.
+ * 더블클릭 등으로 인한 MatchingError(예: 이미 처리된 신청)는 조용히 무시하고,
+ * 그 외 예외만 그대로 전파한다.
+ */
+function ignoreMatchingError(e: unknown): void {
+  if (e instanceof MatchingError) return;
+  throw e;
+}
+
 export async function applyAction(
   meetupId: string,
   _prevState: ActionState,
@@ -49,32 +59,55 @@ export async function applyAction(
   return {};
 }
 
-export async function approveAction(participationId: string, meetupId: string) {
-  const user = await requireUser();
-  await approveParticipation(participationId, user.id);
+export async function approveAction(participationId: string, meetupId: string): Promise<void> {
+  try {
+    const user = await requireUser();
+    await approveParticipation(participationId, user.id);
+  } catch (e) {
+    return ignoreMatchingError(e);
+  }
   revalidatePath(`/meetups/${meetupId}`);
 }
 
-export async function rejectAction(participationId: string, meetupId: string) {
-  const user = await requireUser();
-  await rejectParticipation(participationId, user.id);
+export async function rejectAction(participationId: string, meetupId: string): Promise<void> {
+  try {
+    const user = await requireUser();
+    await rejectParticipation(participationId, user.id);
+  } catch (e) {
+    return ignoreMatchingError(e);
+  }
   revalidatePath(`/meetups/${meetupId}`);
 }
 
-export async function removeAction(participationId: string, meetupId: string) {
-  const user = await requireUser();
-  await removeParticipant(participationId, user.id);
+export async function removeAction(participationId: string, meetupId: string): Promise<void> {
+  try {
+    const user = await requireUser();
+    await removeParticipant(participationId, user.id);
+  } catch (e) {
+    return ignoreMatchingError(e);
+  }
   revalidatePath(`/meetups/${meetupId}`);
 }
 
-export async function cancelMyParticipationAction(participationId: string, meetupId: string) {
-  const user = await requireUser();
-  await cancelMyParticipation(participationId, user.id);
+export async function cancelMyParticipationAction(
+  participationId: string,
+  meetupId: string,
+): Promise<void> {
+  try {
+    const user = await requireUser();
+    await cancelMyParticipation(participationId, user.id);
+  } catch (e) {
+    return ignoreMatchingError(e);
+  }
   revalidatePath(`/meetups/${meetupId}`);
 }
 
-export async function cancelMeetupAction(meetupId: string) {
-  const user = await requireUser();
-  await cancelMeetup(meetupId, user.id);
+export async function cancelMeetupAction(meetupId: string): Promise<void> {
+  try {
+    const user = await requireUser();
+    await cancelMeetup(meetupId, user.id);
+  } catch (e) {
+    return ignoreMatchingError(e);
+  }
   revalidatePath(`/meetups/${meetupId}`);
 }

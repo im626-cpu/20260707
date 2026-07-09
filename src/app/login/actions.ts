@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { isAllowedSchoolEmail } from "@/lib/auth";
+import { isAllowedSchoolEmail, sanitizeRedirectPath } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type RequestMagicLinkResult =
@@ -32,7 +32,7 @@ export async function requestMagicLink(
     `${headerList.get("x-forwarded-proto") ?? "http"}://${headerList.get("host")}`;
 
   const callbackUrl = new URL("/auth/callback", origin);
-  callbackUrl.searchParams.set("redirectTo", redirectTo);
+  callbackUrl.searchParams.set("redirectTo", sanitizeRedirectPath(redirectTo));
 
   const { error } = await supabase.auth.signInWithOtp({
     email: trimmedEmail,

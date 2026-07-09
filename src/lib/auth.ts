@@ -14,6 +14,17 @@ export function isAllowedSchoolEmail(email: string): boolean {
   return allowedDomains().includes(domain);
 }
 
+const DEFAULT_REDIRECT_PATH = "/meetups";
+
+/** 오픈 리다이렉트 방지: 같은 오리진의 상대 경로만 허용하고, 그 외는 기본 경로로 대체. */
+export function sanitizeRedirectPath(path: string | null | undefined): string {
+  if (!path) return DEFAULT_REDIRECT_PATH;
+  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\")) {
+    return DEFAULT_REDIRECT_PATH;
+  }
+  return path;
+}
+
 /** 로그인된 경우 Supabase 세션 + Prisma User row를 함께 반환. 비로그인 시 null. */
 export async function getCurrentUser() {
   const supabase = await createClient();

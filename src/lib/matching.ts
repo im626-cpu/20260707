@@ -17,10 +17,15 @@ export async function recalcMeetupStatus(tx: Prisma.TransactionClient, meetupId:
   const approved = await tx.participation.aggregate({
     where: { meetupId, status: "APPROVED" },
     _sum: { expectedAmount: true },
+    _count: true,
   });
   const sum = approved._sum.expectedAmount ?? 0;
+  const count = approved._count;
+  // 방장 혼자 최소 주문 금액을 채운 것만으로는 "배달메이트 매칭"이 성립하지 않으므로,
+  // 방장 외 최소 1인 이상 승인된 경우에만 매칭완료로 전환한다.
+  const hasMate = count >= 2;
 
-  if (meetup.status === "RECRUITING" && sum >= meetup.minOrderAmount) {
+  if (meetup.status === "RECRUITING" && sum >= meetup.minOrderAmount && hasMate) {
     // 매칭완료 전환과 동시에, 아직 승인되지 않은 대기 신청은 전부 자동 거절 (PRD §4-3, §5-5)
     await tx.participation.updateMany({
       where: { meetupId, status: "PENDING" },
@@ -29,8 +34,8 @@ export async function recalcMeetupStatus(tx: Prisma.TransactionClient, meetupId:
     return tx.meetup.update({ where: { id: meetupId }, data: { status: "MATCHED" } });
   }
 
-  if (meetup.status === "MATCHED" && sum < meetup.minOrderAmount) {
-    // 강제 제외 등으로 누적액이 다시 최소금액 미만이 되면 모집중으로 복귀 (PRD §4-5)
+  if (meetup.status === "MATCHED" && (sum < meetup.minOrderAmount || !hasMate)) {
+    // 강제 제외 등으로 누적액이 다시 최소금액 미만이 되거나 메이트가 없어지면 모집중으로 복귀 (PRD §4-5)
     return tx.meetup.update({ where: { id: meetupId }, data: { status: "RECRUITING" } });
   }
 
