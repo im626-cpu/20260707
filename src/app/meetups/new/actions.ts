@@ -10,8 +10,9 @@ import { createMeetup } from "@/lib/meetup";
 const schema = z.object({
   locationBuilding: z.enum(BUILDINGS),
   locationDetail: z.string().min(1, "상세 위치를 입력해주세요."),
-  mealTimeStart: z.string().min(1, "식사 가능 시작 시간을 입력해주세요."),
-  mealTimeEnd: z.string().min(1, "식사 가능 종료 시간을 입력해주세요."),
+  mealDate: z.string().min(1, "날짜를 입력해주세요."),
+  mealStartTime: z.string().min(1, "식사 가능 시작 시간을 입력해주세요."),
+  mealEndTime: z.string().min(1, "식사 가능 종료 시간을 입력해주세요."),
   storeName: z.string().min(1, "가게명을 입력해주세요."),
   menuDescription: z.string().min(1, "메뉴 설명을 입력해주세요."),
   deliveryFee: z.coerce.number().int().min(0, "배달료는 0 이상이어야 합니다."),
@@ -36,8 +37,8 @@ export async function createMeetupAction(
   }
 
   const data = parsed.data;
-  const mealTimeStart = new Date(data.mealTimeStart);
-  const mealTimeEnd = new Date(data.mealTimeEnd);
+  const mealTimeStart = new Date(`${data.mealDate}T${data.mealStartTime}`);
+  const mealTimeEnd = new Date(`${data.mealDate}T${data.mealEndTime}`);
 
   let meetupId: string;
   try {

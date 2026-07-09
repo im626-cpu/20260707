@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAllowedSchoolEmail, sanitizeRedirectPath } from "@/lib/auth";
+import { generateRandomNickname } from "@/lib/nickname";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -28,15 +29,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=domain", origin));
   }
 
-  const defaultNickname = authUser.email.split("@")[0];
-
   await prisma.user.upsert({
     where: { id: authUser.id },
     update: {},
     create: {
       id: authUser.id,
       schoolEmail: authUser.email,
-      nickname: defaultNickname,
+      nickname: generateRandomNickname(),
     },
   });
 

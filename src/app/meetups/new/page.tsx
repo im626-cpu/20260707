@@ -37,19 +37,28 @@ export default function NewMeetupPage() {
           />
         </Field>
 
+        <Field label="식사 가능 날짜">
+          <input
+            type="date"
+            name="mealDate"
+            required
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          />
+        </Field>
+
         <div className="grid grid-cols-2 gap-3">
-          <Field label="식사 가능 시작">
+          <Field label="식사 가능 시작 시간">
             <input
-              type="datetime-local"
-              name="mealTimeStart"
+              type="time"
+              name="mealStartTime"
               required
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </Field>
-          <Field label="식사 가능 종료">
+          <Field label="식사 가능 종료 시간">
             <input
-              type="datetime-local"
-              name="mealTimeEnd"
+              type="time"
+              name="mealEndTime"
               required
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
