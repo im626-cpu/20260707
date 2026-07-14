@@ -47,19 +47,27 @@ export default function NewMeetupPage() {
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="식사 가능 시작 시간">
+          <Field label="식사 가능 시작 시간 (24시간제)">
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
               name="mealStartTime"
               required
+              placeholder="예: 18:30"
+              pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+              title="24시간제로 입력해주세요 (예: 18:30)"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </Field>
-          <Field label="식사 가능 종료 시간">
+          <Field label="식사 가능 종료 시간 (24시간제)">
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
               name="mealEndTime"
               required
+              placeholder="예: 19:30"
+              pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+              title="24시간제로 입력해주세요 (예: 19:30)"
               className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </Field>

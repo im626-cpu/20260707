@@ -7,12 +7,20 @@ import { BUILDINGS } from "@/lib/buildings";
 import { MatchingError } from "@/lib/matching";
 import { createMeetup } from "@/lib/meetup";
 
+const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const schema = z.object({
   locationBuilding: z.enum(BUILDINGS),
   locationDetail: z.string().min(1, "상세 위치를 입력해주세요."),
   mealDate: z.string().min(1, "날짜를 입력해주세요."),
-  mealStartTime: z.string().min(1, "식사 가능 시작 시간을 입력해주세요."),
-  mealEndTime: z.string().min(1, "식사 가능 종료 시간을 입력해주세요."),
+  mealStartTime: z
+    .string()
+    .min(1, "식사 가능 시작 시간을 입력해주세요.")
+    .regex(TIME_24H_PATTERN, "시작 시간은 24시간제 HH:MM 형식으로 입력해주세요 (예: 18:30)."),
+  mealEndTime: z
+    .string()
+    .min(1, "식사 가능 종료 시간을 입력해주세요.")
+    .regex(TIME_24H_PATTERN, "종료 시간은 24시간제 HH:MM 형식으로 입력해주세요 (예: 19:30)."),
   storeName: z.string().min(1, "가게명을 입력해주세요."),
   menuDescription: z.string().min(1, "메뉴 설명을 입력해주세요."),
   deliveryFee: z.coerce.number().int().min(0, "배달료는 0 이상이어야 합니다."),
