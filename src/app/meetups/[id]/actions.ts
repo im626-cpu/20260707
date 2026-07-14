@@ -1,7 +1,11 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
+import { participations } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { notifyMeetupMatched } from "@/lib/email";
 import {
   applyToMeetup,
   approveParticipation,
@@ -60,13 +64,24 @@ export async function applyAction(
 }
 
 export async function approveAction(participationId: string, meetupId: string): Promise<void> {
+  let meetup;
   try {
     const user = await requireUser();
-    await approveParticipation(participationId, user.id);
+    meetup = await approveParticipation(participationId, user.id);
   } catch (e) {
     return ignoreMatchingError(e);
   }
   revalidatePath(`/meetups/${meetupId}`);
+
+  // approveParticipation은 PENDING 신청에 대해서만 성공하고, PENDING은 RECRUITING 상태에서만
+  // 존재할 수 있으므로(매칭 시 자동 거절됨) 여기서 status가 MATCHED라는 것은 방금 막 전환되었다는 뜻이다.
+  if (meetup.status === "MATCHED") {
+    const approved = await db.query.participations.findMany({
+      where: eq(participations.meetupId, meetupId),
+      with: { user: true },
+    });
+    await notifyMeetupMatched(meetup, approved.filter((p) => p.status === "APPROVED"));
+  }
 }
 
 export async function rejectAction(participationId: string, meetupId: string): Promise<void> {

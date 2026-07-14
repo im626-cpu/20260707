@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { BUILDINGS } from "@/lib/buildings";
+import { notifyMeetupCreated } from "@/lib/email";
 import { MatchingError } from "@/lib/matching";
 import { createMeetup } from "@/lib/meetup";
 
@@ -62,6 +63,7 @@ export async function createMeetupAction(
       hostExpectedAmount: data.hostExpectedAmount,
     });
     meetupId = meetup.id;
+    await notifyMeetupCreated(meetup, user);
   } catch (e) {
     if (e instanceof MatchingError) {
       return { error: e.message };
