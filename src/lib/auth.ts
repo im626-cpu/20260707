@@ -11,6 +11,10 @@ function allowedDomains(): string[] {
 }
 
 export function isAllowedSchoolEmail(email: string): boolean {
+  // TODO(temp): 테스트를 위해 학교 이메일 도메인 제한을 임시로 비활성화. 아래 early return을
+  // 지우면 ALLOWED_EMAIL_DOMAINS 기반 검증으로 되돌아간다.
+  if (email.includes("@")) return true;
+
   const domain = email.split("@")[1]?.toLowerCase();
   if (!domain) return false;
   return allowedDomains().includes(domain);
