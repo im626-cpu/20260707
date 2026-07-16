@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { participations } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { notifyMeetupMatched } from "@/lib/email";
+import { notifyMeetupMatched, notifyMatchedMembers } from "@/lib/email";
 import {
   applyToMeetup,
   approveParticipation,
@@ -80,7 +80,9 @@ export async function approveAction(participationId: string, meetupId: string): 
       where: eq(participations.meetupId, meetupId),
       with: { user: true },
     });
-    await notifyMeetupMatched(meetup, approved.filter((p) => p.status === "APPROVED"));
+    const approvedParticipants = approved.filter((p) => p.status === "APPROVED");
+    await notifyMeetupMatched(meetup, approvedParticipants);
+    await notifyMatchedMembers(meetup, approvedParticipants);
   }
 }
 
