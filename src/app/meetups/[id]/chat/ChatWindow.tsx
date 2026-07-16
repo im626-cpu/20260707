@@ -20,6 +20,7 @@ export default function ChatWindow({
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +48,9 @@ export default function ChatWindow({
             createdAt: string;
             userId: string;
           };
+          // Own messages are already reflected via the optimistic add + reconcile below;
+          // re-adding them here would race with that reconcile and duplicate the bubble.
+          if (row.userId === currentUserId) return;
           setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
         },
       )
@@ -57,7 +61,7 @@ export default function ChatWindow({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [meetupId]);
+  }, [meetupId, currentUserId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,6 +72,7 @@ export default function ChatWindow({
     const content = input.trim();
     if (!content) return;
     setInput("");
+    setError(null);
 
     const tempId = `optimistic-${crypto.randomUUID()}`;
     setMessages((prev) => [
@@ -76,11 +81,17 @@ export default function ChatWindow({
     ]);
 
     startTransition(async () => {
-      const result = await sendMessageAction(meetupId, content);
-      if (result) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, id: result.id, createdAt: result.createdAt } : m)),
-        );
+      try {
+        const result = await sendMessageAction(meetupId, content);
+        if (result) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === tempId ? { ...m, id: result.id, createdAt: result.createdAt } : m)),
+          );
+        }
+      } catch (e) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setInput(content);
+        setError(e instanceof Error ? e.message : "메시지 전송에 실패했습니다.");
       }
     });
   }
@@ -104,6 +115,7 @@ export default function ChatWindow({
         })}
         <div ref={bottomRef} />
       </div>
+      {error && <p className="px-3 pt-2 text-sm text-red-600">{error}</p>}
       <form onSubmit={handleSubmit} className="flex gap-2 border-t border-neutral-200 p-2">
         <input
           value={input}
