@@ -30,7 +30,7 @@ export default async function MyPage() {
   return (
     <main className="mx-auto max-w-lg px-4 py-8">
       <h1 className="mb-6 text-xl font-semibold">마이페이지</h1>
-      <p className="mb-8 text-sm text-neutral-500">{user.nickname} ({user.schoolEmail})</p>
+      <p className="mb-8 text-sm text-neutral-500">{user.nickname}</p>
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-neutral-700">내가 작성한 모임</h2>

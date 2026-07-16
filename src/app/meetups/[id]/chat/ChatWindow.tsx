@@ -50,7 +50,9 @@ export default function ChatWindow({
           setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log(`[chat:${meetupId}] realtime status:`, status, err ?? "");
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -66,8 +68,20 @@ export default function ChatWindow({
     const content = input.trim();
     if (!content) return;
     setInput("");
+
+    const tempId = `optimistic-${crypto.randomUUID()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: tempId, content, createdAt: new Date().toISOString(), userId: currentUserId },
+    ]);
+
     startTransition(async () => {
-      await sendMessageAction(meetupId, content);
+      const result = await sendMessageAction(meetupId, content);
+      if (result) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, id: result.id, createdAt: result.createdAt } : m)),
+        );
+      }
     });
   }
 

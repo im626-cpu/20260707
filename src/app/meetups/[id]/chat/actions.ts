@@ -35,5 +35,10 @@ export async function sendMessageAction(meetupId: string, content: string) {
 
   await assertChatAccess(meetupId, user.id);
 
-  await db.insert(chatMessages).values({ meetupId, userId: user.id, content: trimmed });
+  const [inserted] = await db
+    .insert(chatMessages)
+    .values({ meetupId, userId: user.id, content: trimmed })
+    .returning();
+
+  return { id: inserted.id, createdAt: inserted.createdAt.toISOString() };
 }
